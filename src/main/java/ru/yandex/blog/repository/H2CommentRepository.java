@@ -13,6 +13,7 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Repository
 public class H2CommentRepository implements CommentRepository {
@@ -34,7 +35,7 @@ public class H2CommentRepository implements CommentRepository {
     @Override
     public Comment create(Comment comment) {
         String sql = """
-                INSERT INTO comments (post_id, content, created_at, updated_at
+                INSERT INTO comments (post_id, content, created_at, updated_at)
                 VALUES (?, ?, ?, ?)
                 """;
         KeyHolder keyHolder = new GeneratedKeyHolder();
@@ -45,8 +46,9 @@ public class H2CommentRepository implements CommentRepository {
             statement.setTimestamp(3, Timestamp.valueOf(LocalDateTime.now()));
             statement.setTimestamp(4, Timestamp.valueOf(LocalDateTime.now()));
             return statement;
-        });
-        comment.setId(keyHolder.getKey().longValue());
+        }, keyHolder);
+        Map<String, Object> keys = keyHolder.getKeys();
+        comment.setId(((Number) keys.get("ID")).longValue());
         return comment;
     }
 
@@ -66,7 +68,7 @@ public class H2CommentRepository implements CommentRepository {
 
     @Override
     public Comment findByIdAndPostId(long id, long postId) {
-        String sql = "SELECT FROM comments WHERE id = ? AND post_id = ?";
+        String sql = "SELECT * FROM comments WHERE id = ? AND post_id = ?";
         return jdbcTemplate.queryForObject(sql, commentRowMapper, id, postId);
     }
 
@@ -74,7 +76,7 @@ public class H2CommentRepository implements CommentRepository {
     public void update(Comment comment) {
         String sql = """
                 UPDATE comments SET content = ?, updated_at = ?
-                "WHERE id = ? AND post_id = ?
+                WHERE id = ? AND post_id = ?
                 """;
         jdbcTemplate.update(sql, comment.getContent(), Timestamp.valueOf(LocalDateTime.now()), comment.getId(),
                 comment.getPostId());
@@ -83,7 +85,7 @@ public class H2CommentRepository implements CommentRepository {
     @Override
     public void deleteByIdAndPostId(long id, long postId) {
         String sql = "DELETE FROM comments WHERE id = ? AND post_id = ?";
-        jdbcTemplate.update(sql, commentRowMapper, id, postId);
+        jdbcTemplate.update(sql, id, postId);
     }
 
     @Override

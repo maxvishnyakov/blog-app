@@ -1,0 +1,8 @@
+{
+  "id": 1,
+  "title": "Отредактированный пост",
+  "text": "Отредактированный текст поста",
+  "tags":["edited_tag_1", "tag_2"],
+  "likesCount": 15,
+  "commentsCount": 2
+}

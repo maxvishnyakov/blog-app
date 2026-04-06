@@ -1,0 +1,8 @@
+{
+  "id": 1,
+  "title": "Введение в Spring Boot",
+  "text": "Spring Boot — это фреймворк для создания микросервисов и веб-приложений на Java. Он упрощает настройку и развертывание приложени...",
+  "tags":["java", "spring", "tutorial"],
+  "likesCount": 15,
+  "commentsCount": 2
+}

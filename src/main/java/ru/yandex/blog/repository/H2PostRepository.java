@@ -15,6 +15,7 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Repository
 public class H2PostRepository implements PostRepository{
@@ -25,13 +26,13 @@ public class H2PostRepository implements PostRepository{
         Long id = resultSet.getLong("id");
         String title = resultSet.getString("title");
         String content = resultSet.getString("content");
-        String imagePath = resultSet.getString("image_path");
+        byte[] image = resultSet.getBytes("image");
         Integer likesCount = resultSet.getInt("likes_count");
         Integer commentsCount = resultSet.getInt("comments_count");
         List<String> tags = convertJsonToTags(resultSet.getString("tags"));
         LocalDateTime createdAt = resultSet.getTimestamp("created_at").toLocalDateTime();
         LocalDateTime updatedAt = resultSet.getTimestamp("updated_at").toLocalDateTime();
-        return new Post(id, title, content, imagePath, likesCount, commentsCount,
+        return new Post(id, title, content, image, likesCount, commentsCount,
                 tags, createdAt, updatedAt);
     };
 
@@ -45,7 +46,7 @@ public class H2PostRepository implements PostRepository{
                 SELECT * FROM posts WHERE
                 LOWER(title) LIKE LOWER(?) OR
                 LOWER(content) LIKE LOWER(?)
-                ORDER BY created_at DESC LIMIT ? OFFSET ?
+                ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?
                 """;
         String searchPattern = "%" + search + "%";
         return jdbcTemplate.query(sql, postRowMapper,
@@ -56,8 +57,8 @@ public class H2PostRepository implements PostRepository{
     public Integer countPosts(String search) {
         String sql = """
                 SELECT COUNT(*) FROM posts WHERE
-                "LOWER(title) LIKE LOWER(?) OR
-                "LOWER(content) LIKE LOWER(?)
+                LOWER(title) LIKE LOWER(?) OR
+                LOWER(content) LIKE LOWER(?)
                 """;
         String searchPattern = "%" + search + "%";
         return jdbcTemplate.queryForObject(sql, Integer.class, searchPattern, searchPattern);
@@ -66,7 +67,7 @@ public class H2PostRepository implements PostRepository{
     @Override
     public Post create(Post post) {
         String sql = """
-                INSERT INTO posts (title, content, image_path, likes_count,
+                INSERT INTO posts (title, content, image, likes_count,
                 comments_count, tags, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """;
@@ -74,9 +75,11 @@ public class H2PostRepository implements PostRepository{
         jdbcTemplate.update(connection -> {
             PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             putPostData(statement, post);
+            statement.setTimestamp(8, Timestamp.valueOf(LocalDateTime.now()));
             return statement;
-        });
-        post.setId(keyHolder.getKey().longValue());
+        }, keyHolder);
+        Map<String, Object> keys = keyHolder.getKeys();
+        post.setId(((Number) keys.get("ID")).longValue());
         return post;
     }
 
@@ -90,14 +93,14 @@ public class H2PostRepository implements PostRepository{
     public void update(Post post) {
         String sql = """
                 UPDATE posts SET title = ?, content = ?, tags = ?,
-                likes_count = ?, comments_count = ?, image_path = ?,
+                likes_count = ?, comments_count = ?, image = ?,
                 updated_at = ? WHERE id = ?
                 """;
 
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(sql);
             putPostData(ps, post);
-            ps.setLong(9, post.getId());
+            ps.setLong(8, post.getId());
             return ps;
         });
     }
@@ -109,20 +112,28 @@ public class H2PostRepository implements PostRepository{
     }
 
     @Override
-    public void updateImagePath(Long postId, String imagePath) {
-        String sql = "UPDATE posts SET image_path = ?, updated_at = ? WHERE id = ?";
-        jdbcTemplate.update(sql, imagePath, Timestamp.valueOf(LocalDateTime.now()), postId);
+    public void uploadImage(Long postId, byte[] imageBytes) {
+        String sql = "UPDATE posts SET image = ?, updated_at = ? WHERE id = ?";
+        jdbcTemplate.update(sql, imageBytes, Timestamp.valueOf(LocalDateTime.now()), postId);
+    }
+
+    @Override
+    public byte[] findImageById(Long id) {
+        String sql = "SELECT image FROM posts WHERE id=?";
+        return jdbcTemplate.query(
+                sql, preparedStatement -> preparedStatement.setLong(1, id),
+                resultSet -> resultSet.next() ? resultSet.getBytes("image") : null
+        );
     }
 
     private void putPostData(PreparedStatement statement, Post post) throws SQLException {
         statement.setString(1, post.getTitle());
         statement.setString(2, post.getContent());
-        statement.setString(3, post.getImagePath());
+        statement.setBytes(3, post.getImage());
         statement.setInt(4, post.getLikesCount());
         statement.setInt(5, post.getCommentsCount());
         statement.setString(6, convertTagsToJson(post.getTags()));
-        statement.setTimestamp(7, Timestamp.valueOf(post.getCreatedAt()));
-        statement.setTimestamp(8, Timestamp.valueOf(post.getUpdatedAt()));
+        statement.setTimestamp(7, Timestamp.valueOf(post.getUpdatedAt()));
     }
 
     private String convertTagsToJson(List<String> tags) {

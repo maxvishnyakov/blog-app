@@ -1,0 +1,23 @@
+{
+  "posts": [
+    {
+      "id": 4,
+      "title": "Еще одна работа с JDBC в Spring",
+      "text": "Spring JDBC предоставляет удобные абстракции для работы с базами данных. JdbcTemplate упрощает выполнение SQL-запросов и обработ...",
+      "tags":["jdbc", "spring", "database"],
+      "likesCount": 5,
+      "commentsCount": 0
+    },
+    {
+      "id": 2,
+      "title": "Работа с JDBC в Spring",
+      "text": "Spring JDBC предоставляет удобные абстракции для работы с базами данных. JdbcTemplate упрощает выполнение SQL-запросов и обработ...",
+      "tags": ["java", "spring", "database"],
+      "likesCount": 8,
+      "commentsCount": 1
+    }
+  ],
+  "hasPrev": false,
+  "hasNext": true,
+  "lastPage": 2
+}

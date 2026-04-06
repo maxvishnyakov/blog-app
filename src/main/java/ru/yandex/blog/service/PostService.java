@@ -6,6 +6,7 @@ import ru.yandex.blog.domain.Post;
 import ru.yandex.blog.repository.CommentRepository;
 import ru.yandex.blog.repository.PostRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -24,7 +25,9 @@ public class PostService {
         return postRepository.countPosts(search);
     }
 
-    public Post create (Post post) {
+    public Post create (String title, String text, List<String> tags) {
+        Post post = new Post(title, text, null, 0, 0, tags, LocalDateTime.now(),
+                LocalDateTime.now());
         return postRepository.create(post);
     }
 
@@ -54,14 +57,11 @@ public class PostService {
         return post.getLikesCount();
     }
 
-    public void updateImage(Long postId, String imagePath) {
-        Post post = postRepository.findById(postId);
-        post.setImagePath(imagePath);
-        postRepository.update(post);
+    public void uploadImage(Long id, byte[] imageBytes) {;
+        postRepository.uploadImage(id, imageBytes);
     }
 
-    public String getImagePath(Long postId) {
-        Post post = postRepository.findById(postId);
-        return post.getImagePath();
+    public byte[] getImage(Long id) {
+        return postRepository.findImageById(id);
     }
 }
