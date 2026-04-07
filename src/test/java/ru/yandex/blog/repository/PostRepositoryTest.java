@@ -41,7 +41,7 @@ public class PostRepositoryTest {
                    (
                        'Работа с JDBC в Spring',
                        'Spring JDBC предоставляет удобные абстракции для работы с базами данных. JdbcTemplate упрощает выполнение SQL-запросов и обработку результатов.',
-                       '["java", "spring", "database"]',
+                       '["java", "jdbc", "database"]',
                        8,
                        1
                    ),
@@ -64,7 +64,7 @@ public class PostRepositoryTest {
 
     @Test
     public void findPostsWithPagination() {
-        List<Post> posts = postRepository.findPostsWithPagination("Spring", 0, 2);
+        List<Post> posts = postRepository.findPostsWithPagination("Spring", List.of("jdbc"), 0, 2);
 
         assertNotNull(posts);
         assertEquals(2, posts.size());

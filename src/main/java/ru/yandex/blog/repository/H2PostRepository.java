@@ -14,6 +14,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -41,16 +42,25 @@ public class H2PostRepository implements PostRepository{
     }
 
     @Override
-    public List<Post> findPostsWithPagination(String search, int offset, int pageSize) {
-        String sql = """
-                SELECT * FROM posts WHERE
-                LOWER(title) LIKE LOWER(?) OR
-                LOWER(content) LIKE LOWER(?)
-                ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?
-                """;
-        String searchPattern = "%" + search + "%";
-        return jdbcTemplate.query(sql, postRowMapper,
-                searchPattern, searchPattern, pageSize, offset);
+    public List<Post> findPostsWithPagination(String searchString, List<String> tags, int offset, int pageSize) {
+        StringBuilder sqlBuilder = new StringBuilder();
+        List<Object> params = new ArrayList<>();
+        sqlBuilder.append("SELECT * FROM posts WHERE 1=1");
+        if (searchString != null && !searchString.trim().isEmpty()) {
+            sqlBuilder.append(" AND LOWER(COALESCE(title, '')) LIKE LOWER(CONCAT('%', ?, '%'))");
+            params.add(searchString);
+        }
+        if (tags != null && !tags.isEmpty()) {
+            for (String tag : tags) {
+                sqlBuilder.append(" AND tags LIKE ?");
+                params.add("%\"" + escapeCharactersForLike(tag) + "\"%");
+            }
+        }
+        params.add(pageSize);
+        params.add(offset);
+        sqlBuilder.append(" ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?");
+        return jdbcTemplate.query(sqlBuilder.toString(), postRowMapper,
+                params.toArray());
     }
 
     @Override
@@ -96,7 +106,6 @@ public class H2PostRepository implements PostRepository{
                 likes_count = ?, comments_count = ?, image = ?,
                 updated_at = ? WHERE id = ?
                 """;
-
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(sql);
             putPostData(ps, post);
@@ -129,10 +138,10 @@ public class H2PostRepository implements PostRepository{
     private void putPostData(PreparedStatement statement, Post post) throws SQLException {
         statement.setString(1, post.getTitle());
         statement.setString(2, post.getContent());
-        statement.setBytes(3, post.getImage());
+        statement.setString(3, convertTagsToJson(post.getTags()));
         statement.setInt(4, post.getLikesCount());
         statement.setInt(5, post.getCommentsCount());
-        statement.setString(6, convertTagsToJson(post.getTags()));
+        statement.setBytes(6, post.getImage());
         statement.setTimestamp(7, Timestamp.valueOf(post.getUpdatedAt()));
     }
 
@@ -151,5 +160,14 @@ public class H2PostRepository implements PostRepository{
         } catch (Exception e) {
             return List.of();
         }
+    }
+
+    private String escapeCharactersForLike(String value) {
+        if (value == null) return "";
+        return value
+                .replace("\\", "\\\\")
+                .replace("%", "\\%")
+                .replace("_", "\\_")
+                .replace("\"", "\\\"");
     }
 }

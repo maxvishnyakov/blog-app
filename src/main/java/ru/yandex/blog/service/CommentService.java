@@ -39,6 +39,10 @@ public class CommentService {
 
     public void delete(long id, long postId) {
         commentRepository.deleteByIdAndPostId(id, postId);
+        Post post = postRepository.findById(postId);
+        int commentsCount = post.getCommentsCount();
+        post.setCommentsCount(--commentsCount);
+        postRepository.update(post);
     }
 
     public List<Comment> getCommentsByPostId(long postId) {

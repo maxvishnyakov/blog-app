@@ -5,7 +5,7 @@ import ru.yandex.blog.domain.Post;
 import java.util.List;
 
 public interface PostRepository {
-    List<Post> findPostsWithPagination(String search, int offset, int pageSize);
+    List<Post> findPostsWithPagination(String searchString, List<String> tags, int offset, int pageSize);
 
     Integer countPosts(String search);
 

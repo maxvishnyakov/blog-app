@@ -115,6 +115,9 @@
         <plugin>
           <artifactId>maven-war-plugin</artifactId>
           <version>3.4.0</version>
+          <configuration>
+            <warName>ROOT</warName>
+          </configuration>
         </plugin>
         <plugin>
           <artifactId>maven-install-plugin</artifactId>

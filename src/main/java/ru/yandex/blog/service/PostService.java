@@ -7,6 +7,7 @@ import ru.yandex.blog.repository.CommentRepository;
 import ru.yandex.blog.repository.PostRepository;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -18,7 +19,23 @@ public class PostService {
     private CommentRepository commentRepository;
 
     public List<Post> getPosts(String search, int offset, int pageSize) {
-        return postRepository.findPostsWithPagination(search, offset, pageSize);
+        String[] words = search.split("\\s+");
+        List<String> wordsToSearch = new ArrayList<>();
+        List<String> tagsToSearch = new ArrayList<>();
+        for (String word : words) {
+            if (!word.isEmpty()) {
+                if (word.startsWith("#")) {
+                    String tag = word.substring(1);
+                    if (!tag.isEmpty()) {
+                        tagsToSearch.add(tag);
+                    }
+                } else {
+                    wordsToSearch.add(word);
+                }
+            }
+        }
+        String searchString = wordsToSearch.isEmpty() ? null : String.join(" ", wordsToSearch);
+        return postRepository.findPostsWithPagination(searchString, tagsToSearch, offset, pageSize);
     }
 
     public int getTotalCount(String search) {

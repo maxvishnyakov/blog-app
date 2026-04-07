@@ -106,7 +106,7 @@ public class PostController {
         return ResponseEntity.ok(new CommentResponse(comment));
     }
 
-    @PostMapping("/{postId}/comments/")
+    @PostMapping("/{postId}/comments")
     public ResponseEntity<CommentResponse> createComment(@PathVariable("postId") Long postId,
                                                          @RequestBody CommentRequest commentRequest) throws IOException {
         Comment comment = commentService.create(postId, commentRequest.getText());

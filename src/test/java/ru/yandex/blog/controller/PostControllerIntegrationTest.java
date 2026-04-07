@@ -169,7 +169,7 @@ public class PostControllerIntegrationTest {
                 """;
         String expected = readJsonFile(EXPECTED_FILES_DIR + "create-comment.json");
 
-        mockMvc.perform(post("/api/posts/{postId}/comments/", 2L)
+        mockMvc.perform(post("/api/posts/{postId}/comments", 2L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().isOk())
