@@ -91,7 +91,7 @@ public class CommentRepositoryTest {
 
         List<Comment> comments = commentRepository.findByPostId(1L);
 
-        assertEquals(true, comments.isEmpty());
+        assertTrue(comments.isEmpty());
     }
 
     @Test

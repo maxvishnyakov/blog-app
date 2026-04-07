@@ -64,7 +64,7 @@ public class PostRepositoryTest {
 
     @Test
     public void findPostsWithPagination() {
-        List<Post> posts = postRepository.findPostsWithPagination("Spring", 1, 2);
+        List<Post> posts = postRepository.findPostsWithPagination("Spring", 0, 2);
 
         assertNotNull(posts);
         assertEquals(2, posts.size());
@@ -120,6 +120,6 @@ public class PostRepositoryTest {
         postRepository.uploadImage(4L, pngStub);
 
         byte[] actual = postRepository.findImageById(4L);
-        assertEquals(true, Arrays.equals(pngStub, actual));
+        assertTrue(Arrays.equals(pngStub, actual));
     }
 }
