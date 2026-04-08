@@ -1,0 +1,131 @@
+package ru.yandex.blog.controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import ru.yandex.blog.domain.Comment;
+import ru.yandex.blog.domain.Post;
+import ru.yandex.blog.dto.request.CommentRequest;
+import ru.yandex.blog.dto.request.PostRequest;
+import ru.yandex.blog.dto.response.CommentResponse;
+import ru.yandex.blog.dto.response.PagePostResponse;
+import ru.yandex.blog.dto.response.PostResponse;
+import ru.yandex.blog.service.CommentService;
+import ru.yandex.blog.service.PostService;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@RestController
+@RequestMapping("/api/posts")
+public class PostController {
+
+    @Autowired
+    private PostService postService;
+
+    @Autowired
+    private CommentService commentService;
+
+    @GetMapping
+    public ResponseEntity<PagePostResponse> getPosts(@RequestParam("search") String search, @RequestParam("pageNumber") Integer pageNumber,
+                                                 @RequestParam("pageSize") Integer pageSize) {
+        List<Post> posts = postService.getPosts(search, (pageNumber - 1) * pageSize, pageSize);
+        int totalCount = postService.getTotalCount(search);
+        List<PostResponse> postResponses = posts.stream()
+                .map(PostResponse::new)
+                .collect(Collectors.toList());
+        int lastPage = (int) Math.ceil((double) totalCount / pageSize);
+        if (lastPage == 0) {
+            lastPage = 1;
+        }
+        boolean hasPrev = pageNumber > 1;
+        boolean hasNext = pageNumber < lastPage;
+        return ResponseEntity.ok(new PagePostResponse(postResponses, hasPrev, hasNext, lastPage));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<PostResponse> getPost(@PathVariable("id") Long id) {
+        Post post = postService.getPost(id);
+        return ResponseEntity.ok(new PostResponse(post));
+    }
+
+    @PostMapping
+    public ResponseEntity<PostResponse> create(@RequestBody PostRequest postRequest) {
+        Post post = postService.create(postRequest.getTitle(), postRequest.getText(), postRequest.getTags());
+        return ResponseEntity.ok(new PostResponse(post));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<PostResponse> edit(@PathVariable("id") Long id, @RequestBody PostRequest postRequest) {
+        Post post = postService.updatePost(id, postRequest.getTitle(), postRequest.getText(), postRequest.getTags());
+        return ResponseEntity.ok(new PostResponse(post));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable("id") Long id) {
+        postService.deletePost(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/{id}/likes")
+    public ResponseEntity<Integer> incrementLikes(@PathVariable("id") Long id) {
+        int likesCount = postService.incrementLikesCount(id);
+        return ResponseEntity.ok(likesCount);
+    }
+
+    @PutMapping(value = "/{id}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Void> updateImage(@PathVariable("id") Long id,
+                                            @RequestParam("image") MultipartFile image) throws IOException {
+        postService.uploadImage(id, image.getBytes());
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping(value = "/{id}/image")
+    public ResponseEntity<byte[]> getImage(@PathVariable("id") Long id) {
+        byte[] bytes = postService.getImage(id);
+        return ResponseEntity.ok()
+                .body(bytes);
+    }
+
+    @GetMapping("/{id}/comments")
+    public ResponseEntity<List<CommentResponse>> getCommentsList(@PathVariable("id") Long id) throws IOException {
+        List<Comment> comments = commentService.getCommentsByPostId(id);
+        List<CommentResponse> commentsResponses = comments.stream()
+                .map(CommentResponse::new)
+                .toList();
+        return ResponseEntity.ok(commentsResponses);
+    }
+
+    @GetMapping("/{postId}/comments/{commentId}")
+    public ResponseEntity<CommentResponse> getComment(@PathVariable("postId") Long postId,
+                                                      @PathVariable("commentId") Long commentId) throws IOException {
+        Comment comment = commentService.getCommentByIdAndPostId(commentId, postId);
+        return ResponseEntity.ok(new CommentResponse(comment));
+    }
+
+    @PostMapping("/{postId}/comments")
+    public ResponseEntity<CommentResponse> createComment(@PathVariable("postId") Long postId,
+                                                         @RequestBody CommentRequest commentRequest) throws IOException {
+        Comment comment = commentService.create(postId, commentRequest.getText());
+        return ResponseEntity.ok(new CommentResponse(comment));
+    }
+
+    @PutMapping("/{postId}/comments/{commentId}")
+    public ResponseEntity<CommentResponse> editComment(@PathVariable("postId") Long postId,
+                                                       @PathVariable("commentId") Long commentId,
+                                                       @RequestBody CommentRequest commentRequest) throws IOException {
+        Comment comment = new Comment(commentId, postId, commentRequest.getText());
+        Comment edittedComment = commentService.edit(comment);
+        return ResponseEntity.ok(new CommentResponse(edittedComment));
+    }
+
+    @DeleteMapping("/{postId}/comments/{commentId}")
+    public ResponseEntity<Void> deleteComment(@PathVariable("postId") Long postId,
+                                              @PathVariable("commentId") Long commentId) throws IOException {
+        commentService.delete(commentId, postId);
+        return ResponseEntity.ok().build();
+    }
+}

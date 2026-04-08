@@ -1,0 +1,8 @@
+{
+  "id": 5,
+  "title": "Название поста 3",
+  "text": "Текст поста в формате Markdown...",
+  "tags":["tag_1", "tag_2"],
+  "likesCount": 0,
+  "commentsCount": 0
+}
