@@ -3,11 +3,11 @@ package ru.yandex.blog.repository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.data.jdbc.DataJdbcTest;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
-import ru.yandex.blog.configuration.DataSourceConfiguration;
 import ru.yandex.blog.domain.Comment;
 
 import java.time.LocalDateTime;
@@ -15,13 +15,13 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringJUnitConfig(classes = {DataSourceConfiguration.class, H2CommentRepository.class})
-@TestPropertySource(locations = "classpath:test-application.properties")
+@DataJdbcTest
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@ComponentScan(basePackages = "ru.yandex.blog.repository")
 public class CommentRepositoryTest {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
-
     @Autowired
     private H2CommentRepository commentRepository;
 
